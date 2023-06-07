@@ -14,7 +14,9 @@
   },
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon index.js",
     "reload": "node deploy-commands.js",
     "start-db": "./pocketbase serve"
-  }
+  },
+  "type": "module"
 }

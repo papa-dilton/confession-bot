@@ -1,30 +1,31 @@
-const fs = require('node:fs');
-const path = require('node:path');
-const {Client, Collection, Events, GatewayIntentBits} = require('discord.js');
-const dotenv = require('dotenv');
-const PocketBase = require("pocketbase");
+import fs from 'node:fs'
+import path from 'node:path'
+import {Client, Collection, Events, GatewayIntentBits} from 'discord.js'
+import dotenv from 'dotenv'
+import PocketBase from 'pocketbase'
+import {dirname} from "path";
+import {fileURLToPath} from "url";
 
 // Load environment variables from .env file
 dotenv.config()
 // Create a new database instance
-const db = new PocketBase('localhost:8090')
+const db = new PocketBase('http://127.0.0.1:8090')
 
 // Create a new client instance
 const client = new Client({intents: [GatewayIntentBits.Guilds]});
 client.commands = new Collection();
 
 // Read all command files
-const commandsPath = path.join(__dirname, 'commands');
+const commandsPath = path.join(dirname(fileURLToPath(import.meta.url)), 'commands');
 const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = require(filePath);
+    const command =  await import(`./commands/${file}`)
     // Set a new item in the Collection with the key as the command name and the value as the exported module
     if ('data' in command && 'execute' in command) {
         client.commands.set(command.data.name, command);
     } else {
-        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+        console.log(`[WARNING] The command at ${file} is missing a required "data" or "execute" property.`);
     }
 }
 
@@ -63,12 +64,11 @@ client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isButton()) {
         // If user has reported a post, add it to the database
         if (interaction.customId === 'report') {
-            const data = {
-                "user_id": interaction.user.id,
-                "msg_id": interaction.message.id,
-                "channel_id": interaction.channel.id,
-            };
-            const record = await pb.collection('users').create(data);
+            // Find confession in database and update
+            const confession = await db.collection('confessions').getFirstListItem(`msg_id="${interaction.message.id}" && channel_id="${interaction.message.channelId}" && guild_id="${interaction.message.guildId}"`);
+            confession.reports += 1;
+            await db.collection('confessions').update(confession.id, confession);
+
             await interaction.reply({content: 'Your report has been sent!', ephemeral: true});
         }
     }

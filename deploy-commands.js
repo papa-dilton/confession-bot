@@ -1,23 +1,24 @@
-const { REST, Routes } = require('discord.js');
-const fs = require('node:fs');
-const path = require('node:path');
-const dotenv = require('dotenv');
+import { REST, Routes } from 'discord.js'
+import fs from 'node:fs'
+import path from 'node:path'
+import dotenv from 'dotenv'
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config()
 
 
 const commands = [];
 // Grab all the command files from the commands directory you created earlier
-const foldersPath = path.join(__dirname, 'commands');
+const foldersPath = path.join(dirname(fileURLToPath(import.meta.url)), 'commands');
 const commandFiles = fs.readdirSync(foldersPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-    const filePath = path.join(foldersPath, file);
-    const command = require(filePath);
+    const command = await import(`./commands/${file}`);
     if ('data' in command && 'execute' in command) {
         commands.push(command.data.toJSON());
     } else {
-        console.log(`[WARNING] The command at ${filePath} is missing a required "data" or "execute" property.`);
+        console.log(`[WARNING] The command at ${file} is missing a required "data" or "execute" property.`);
     }
 }
 
