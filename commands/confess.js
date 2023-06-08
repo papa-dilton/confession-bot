@@ -1,5 +1,8 @@
 import {ActionRowBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle} from 'discord.js'
+import checkUser from "../lib/checkUser.js";
 import PocketBase from "pocketbase";
+import checkNick from "../lib/checkNick.js";
+
 const db = new PocketBase('http://127.0.0.1:8090')
 
 
@@ -13,6 +16,10 @@ const data = new SlashCommandBuilder()
     .addStringOption(option =>
         option.setName('title')
             .setDescription('The optional title of the confession'))
+    .addBooleanOption(option =>
+        option.setName('anonymous')
+            .setDescription('Whether or not to post fully anonymously'))
+
 
 const execute = async function (interaction) {
     const confession = interaction.options.getString('confession');
@@ -27,12 +34,31 @@ const execute = async function (interaction) {
     const row = new ActionRowBuilder()
         .addComponents(reportButton);
 
+
+    // Set the nick to Anonymous if the anonymous option is true, otherwise get the user's nick
+    let nick;
+    if (interaction.options.getBoolean('anonymous') == null || interaction.options.getBoolean('anonymous') === false){
+        nick = await checkNick(interaction.user.id, interaction.guild.id)
+    } else {
+        nick = {
+            nick: 'Anonymous'
+        }
+    }
+    let msgContent = `${nick.nick} says:\n`
+    if (title != null) {
+        // Add optional title field
+        msgContent += `**${title}**\n`
+    }
+    msgContent += confession
+
+    // Send the message
     const confessionMessage = await channel.send({
-        content: title ? `**${title}**\n` : '' + confession,
+        content: msgContent,
         components: [row]
     });
 
-    const userRecord = await db.collection('users').getFirstListItem(`discord_id="${interaction.user.id}"`);
+    // Create the confession record in the database
+    const userRecord = await checkUser(interaction.user.id)
     const data = {
         "user_id": userRecord.id,
         "msg_id": `${confessionMessage.id}`,
@@ -42,6 +68,7 @@ const execute = async function (interaction) {
     };
     const record = await db.collection('confessions').create(data);
 
+    // Handle DB errors
     if (record.user_id !== userRecord.id) {
         confessionMessage.delete();
         throw new Error('Something went wrong while creating the confession record.');

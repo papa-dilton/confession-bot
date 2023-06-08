@@ -6,6 +6,7 @@ import PocketBase from 'pocketbase'
 import {dirname} from "path";
 import {fileURLToPath} from "url";
 
+
 // Load environment variables from .env file
 dotenv.config()
 // Create a new database instance
@@ -61,7 +62,7 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     // Accept button clicks
-    if (interaction.isButton()) {
+    else if (interaction.isButton()) {
         // If user has reported a post, add it to the database
         if (interaction.customId === 'report') {
             // Find confession in database and update
@@ -72,7 +73,15 @@ client.on(Events.InteractionCreate, async interaction => {
             await interaction.reply({content: 'Your report has been sent!', ephemeral: true});
         }
     }
+
+    //Reject all other interactions
+    else {
+        throw new Error(`[ERROR] Received interaction of type ${interaction.type} and name ${interaction.commandName}. Ignoring...`);
+    }
 });
+
+
+
 
 
 client.once(Events.ClientReady, c => {
