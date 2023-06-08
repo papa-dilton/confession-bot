@@ -22,6 +22,15 @@ const data = new SlashCommandBuilder()
 
 
 const execute = async function (interaction) {
+    const userRecord = await checkUser(interaction.user.id)
+
+    // If the user is muted, exit early
+    const muteDateObject = new Date(userRecord.mute_until)
+    if (muteDateObject >= Date.now()) {
+        await interaction.reply({content: `You are muted until ${muteDateObject.toDateString()} and cannot confess.`, ephemeral: true});
+        return;
+    }
+
     const confession = interaction.options.getString('confession');
     const title = interaction.options.getString('title');
     const channel = interaction.channel;
@@ -58,7 +67,6 @@ const execute = async function (interaction) {
     });
 
     // Create the confession record in the database
-    const userRecord = await checkUser(interaction.user.id)
     const data = {
         "user_id": userRecord.id,
         "msg_id": `${confessionMessage.id}`,

@@ -70,7 +70,23 @@ client.on(Events.InteractionCreate, async interaction => {
             confession.reports += 1;
             await db.collection('confessions').update(confession.id, confession);
 
+
             await interaction.reply({content: 'Your report has been sent!', ephemeral: true});
+
+
+            // If the confession has been reported enough in a server, delete it and mute author
+            const guildMembers = interaction.client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0)
+            if (confession.reports >= Math.floor(Math.log10(guildMembers) * 4)) {
+                // Mute author
+                const muteDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7)
+                await db.collection('users').update(confession.user_id, {
+                    mute_until: muteDate.toISOString()
+                })
+                // Delete message and remove from database
+                await interaction.message.delete();
+                await db.collection('confessions').delete(confession.id);
+
+            }
         }
     }
 
