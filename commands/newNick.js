@@ -15,6 +15,7 @@ const execute = async function (interaction) {
         "nick": newNick
     })
 
+    await interaction.deferReply()
     await interaction.reply({
         content: 'Your nickname has been changed to ' + newNick + '!',
         ephemeral: true
