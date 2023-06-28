@@ -22,12 +22,14 @@ const data = new SlashCommandBuilder()
 
 
 const execute = async function (interaction) {
+    interaction.deferReply({ephemeral: true});
+
     const userRecord = await checkUser(interaction.user.id)
 
     // If the user is muted, exit early
     const muteDateObject = new Date(userRecord.mute_until)
     if (muteDateObject >= Date.now()) {
-        await interaction.reply({content: `You are muted until ${muteDateObject.toDateString()} and cannot confess.`, ephemeral: true});
+        await interaction.followUp({content: `You are muted until ${muteDateObject.toDateString()} and cannot confess.`, ephemeral: true});
         return;
     }
 
@@ -81,7 +83,7 @@ const execute = async function (interaction) {
         confessionMessage.delete();
         throw new Error('Something went wrong while creating the confession record.');
     }
-    await interaction.reply({content: 'Your confession has been sent!', ephemeral: true});
+    await interaction.followUp({content: 'Your confession has been sent!', ephemeral: true});
 }
 
 export {data, execute}
