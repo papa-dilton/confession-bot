@@ -65,13 +65,14 @@ client.on(Events.InteractionCreate, async interaction => {
     else if (interaction.isButton()) {
         // If user has reported a post, add it to the database
         if (interaction.customId === 'report') {
+            interaction.deferReply({ephemeral: true});
             // Find confession in database and update
             const confession = await db.collection('confessions').getFirstListItem(`msg_id="${interaction.message.id}" && channel_id="${interaction.message.channelId}" && guild_id="${interaction.message.guildId}"`);
             confession.reports += 1;
             await db.collection('confessions').update(confession.id, confession);
 
 
-            await interaction.reply({content: 'Your report has been sent!', ephemeral: true});
+            await interaction.followUp({content: 'Your report has been sent!', ephemeral: true});
 
 
             // If the confession has been reported enough in a server, delete it and mute author
