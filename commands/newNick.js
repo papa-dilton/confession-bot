@@ -9,7 +9,7 @@ const data = new SlashCommandBuilder()
     .setName('new-nick')
     .setDescription('Regenerates your nickname in this server')
 const execute = async function (interaction) {
-    interaction.deferReply({ephemeral: true});
+    await interaction.deferReply({ephemeral: true});
     const nick = await checkNick(interaction.user.id, interaction.guild.id);
     const newNick = createNick()
     await db.collection('nicknames').update(nick.id, {
